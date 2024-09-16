@@ -4,25 +4,31 @@ import java.util.Scanner;
 
 public class Main {
     public static boolean HORIZONTAL = false;
+    static Scanner sc = new Scanner(System.in);
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+
         String[][] playField = new String[11][11];
+        String[] vessels = new String[]{"Aircraft Carrier", "Battleship", "Submarine", "Cruiser", "Destroyer"};
+        int[] vesselLength = new int[]{5,4,3,3,2};
+        StringBuilder wrondCoord = new StringBuilder();
         playField = createPlayField(playField);
         printField(playField);
-        System.out.println("Enter the coordinates of the ship:");
-        String shipCoord = sc.nextLine();
-        String[] coOrdinate = shipCoord.split(" ");
-
-        boolean isCorrect =  checkCoord(coOrdinate);
-        if(isCorrect) {
-            int[] numericalCoord = getNumericCoord(coOrdinate);
-            getLengthAndParts(coOrdinate);
+        for(int i = 0; i < vessels.length;i++) {
+            String[] coOrdinate = getCoord("Enter the coordinates of the "+vessels[i]+" ("+ vesselLength[i] +" cells):");
+            boolean isCorrect =  checkCoord(coOrdinate, vessels[i], vesselLength[i], playField);
+            if(isCorrect) {
+                printField(playField);
+            }
         }
     }
 
-    public static void getLengthAndParts(String[] shipCoord) {
+    public static String[] getCoord(String message) {
+        System.out.println(message);
+        String shipCoord = sc.nextLine();
+        return shipCoord.split(" ");
+    }
+    public static int getLengthAndParts(String[] shipCoord) {
         String end = shipCoord[1];
-        String cord = new String();
         StringBuilder str = new StringBuilder();
         char x = shipCoord[0].charAt(0);
         int y =  Integer.parseInt(shipCoord[0].substring(1));
@@ -50,40 +56,106 @@ public class Main {
 
         }
         str.append(end);
-        System.out.println("length: " + len);
-        System.out.println("Parts: " + str.toString());
+//        System.out.println("length: " + len);
+        return len;
+//        System.out.println("Parts: " + str.toString());
     }
 
-    public static boolean checkCoord(String[] shipCoord) {
-        if(shipCoord[0].charAt(0) != shipCoord[1].charAt(0) &&
-        shipCoord[0].charAt(1) != shipCoord[1].charAt(1)) {
+    public static boolean checkCoord(String[] shipCoord, String vessel, int vesselLength, String[][] playField) {
+        while (shipCoord[0].charAt(0) != shipCoord[1].charAt(0) &&
+                shipCoord[0].charAt(1) != shipCoord[1].charAt(1)) {
+            shipCoord = getCoord("Error! Wrong ship location! Try again:");
+
+        }
+        if ((int) shipCoord[0].charAt(0) < 65 || (int) shipCoord[1].charAt(0) > 74) {
             System.out.println("Error!");
             return false;
         }
-            if((int) shipCoord[0].charAt(0) < 65 || (int) shipCoord[1].charAt(0) > 74) {
+        for (String s : shipCoord) {
+            while(Integer.parseInt(s.substring(1)) > 10 || Integer.parseInt(s.substring(1)) < 1) {
                 System.out.println("Error!");
                 return false;
             }
-            for(String s: shipCoord)
-            if(Integer.parseInt(s.substring(1)) > 10 || Integer.parseInt(s.substring(1)) < 1) {
-                System.out.println("Error!");
-                return false;
-            }
+        }
+
+        int[] numericalCoord = getNumericCoord(shipCoord);
+        while(vesselLength != getLengthAndParts(shipCoord)) {
+            shipCoord = getCoord("Error! Wrong length of the "+vessel+"! Try again:");
+            numericalCoord = getNumericCoord(shipCoord);
+        }
+
+        while(isAdjacent(playField, numericalCoord)) {
+            shipCoord = getCoord("Error! You placed it too close to another one. Try again:");
+            numericalCoord = getNumericCoord(shipCoord);
+        }
+
+        while(isOverlapping(playField, numericalCoord)) {
+            shipCoord = getCoord("Error! You placed it too close to another one. Try again:");
+            numericalCoord = getNumericCoord(shipCoord);
+        }
+
+
         return true;
     }
+    public static boolean isAdjacent(String[][] playField, int[] numericalCoord) {
+        int x1 = numericalCoord[0], y1 = numericalCoord[1];
+        int x2 = numericalCoord[2], y2 = numericalCoord[3];
+
+        int xStart = Math.min(x1, x2), xEnd = Math.max(x1, x2);
+        int yStart = Math.min(y1, y2), yEnd = Math.max(y1, y2);
+
+        for (int i = xStart - 1; i <= xEnd + 1; i++) {
+            for (int j = yStart - 1; j <= yEnd + 1; j++) {
+                if (i > 0 && i < 11 && j > 0 && j < 11) { // Make sure it's within bounds
+                    if (!playField[i][j].equals("~")) {
+                        return true; // Adjacent to another ship
+                    }
+                }
+            }
+        }
+
+        return false; // No adjacent ships
+    }
+
+    public static boolean isOverlapping(String[][] playField, int[] numericalCoord) {
+        int x1 = numericalCoord[0], y1 = numericalCoord[1];
+        int x2 = numericalCoord[2], y2 = numericalCoord[3];
+
+        if (x1 == x2) { // Horizontal ship
+            for (int i = Math.min(y1, y2); i <= Math.max(y1, y2); i++) {
+                if (!playField[x1][i].equals("~")) {
+                    return true; // Overlapping
+                } else {
+                    playField[x1][i] = "O";
+                }
+            }
+        } else { // Vertical ship
+            for (int i = Math.min(x1, x2); i <= Math.max(x1, x2); i++) {
+                if (!playField[i][y1].equals("~")) {
+                    return true; // Overlapping
+                } else {
+                    playField[i][y1] = "O";
+                }
+            }
+        }
+
+        return false; // No overlapping
+    }
+
     public static int[] getNumericCoord(String[] shipCoord) {
         int[] newCoord = new int[4];
+        int index = 0;
         for(int i = 0; i < shipCoord.length; i++) {
             String x = shipCoord[i].substring(0, 1);
             int y = Integer.parseInt(shipCoord[i].substring(1));
-            if(y < 1 || y > 10) {
-                newCoord[i] = y;
-            } else {
-                newCoord[i] = (int) x.charAt(0);
-            }
+            newCoord[index] = (int) x.charAt(0) - 64;
+            newCoord[index+1] = y;
+                index += 2;
         }
         if(shipCoord[0].charAt(0) == shipCoord[1].charAt(0)) {
             HORIZONTAL = true;
+        } else {
+            HORIZONTAL = false;
         }
         return newCoord;
     }
