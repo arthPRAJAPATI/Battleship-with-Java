@@ -1,17 +1,36 @@
 package battleship;
 
 import java.util.Scanner;
-
+/* TODO: code review changes
+    Update HORIZONTAL to be a local variable instead of a class-level variable to avoid unintended side effects between method calls.
+    Initialize playField directly using the method call createPlayField.
+    In the getLengthAndParts method:
+    Remove commented-out code.
+    Modify the checkCoord method:
+    Correct the first while loop condition by using && instead of ||.
+    Correct logical checks in checkCoord to avoid infinite loops and ensure errors are detected correctly:
+    Change the initial while checks to if conditions as they do not need to loop continuously.
+    Replace repetitive calls to getCoord with break statements after updating coordinates.
+    Ensure playField is updated correctly in isOverlapping without modifying it during validation.
+    In the getNumericCoord method:
+    Validate input to handle potential parsing issues.
+    Move coordinate orientation detection logic after parsing both coordinates.
+    Ensure checkCoord properly adds ships to playField after all validations pass.
+    Add missing ship placement logic inside the checkCoord method to update playField.
+    In printField, ensure proper formatting and eliminate any potential index out of bounds issues.
+    */
 public class Main {
     public static boolean HORIZONTAL = false;
     static Scanner sc = new Scanner(System.in);
     public static void main(String[] args) {
 
         String[][] playField = new String[11][11];
+        String[][] fogField = new String[11][11];
         String[] vessels = new String[]{"Aircraft Carrier", "Battleship", "Submarine", "Cruiser", "Destroyer"};
         int[] vesselLength = new int[]{5,4,3,3,2};
         StringBuilder wrondCoord = new StringBuilder();
         playField = createPlayField(playField);
+        fogField = createPlayField(fogField);
         printField(playField);
         for(int i = 0; i < vessels.length;i++) {
             String[] coOrdinate = getCoord("Enter the coordinates of the "+vessels[i]+" ("+ vesselLength[i] +" cells):");
@@ -20,8 +39,40 @@ public class Main {
                 printField(playField);
             }
         }
+        System.out.println("The game starts!");
+        printField(fogField);
+        takeShot(playField, fogField);
     }
 
+    public static void takeShot(String[][] playField, String[][] fogField){
+        System.out.println("Take a shot!");
+        String shot = sc.nextLine();
+        int x = (int) shot.charAt(0) - 64;
+        int y = Character.getNumericValue(shot.charAt(1));
+        while(x > 10 || x < 0 || y > 10 || y < 0 || (shot.length() > 2 && Character.valueOf(shot.charAt(shot.length() - 1)) > 0)) {
+            System.out.println("Error! You entered the wrong coordinates! Try again:");
+            System.out.println("Take a shot!");
+            shot = sc.nextLine();
+            x = (int) shot.charAt(0) - 64;
+            y = Character.getNumericValue(shot.charAt(1));
+        }
+            String value = playField[x][y];
+            if ("~".equals(value)) {
+                playField[(int) shot.charAt(0) - 64][Character.getNumericValue(shot.charAt(1))] = "M";
+                fogField[(int) shot.charAt(0) - 64][Character.getNumericValue(shot.charAt(1))] = "M";
+                printField(fogField);
+                System.out.println("You missed!");
+                printField(playField);
+            } else if ("O".equals(value)) {
+                playField[(int) shot.charAt(0) - 64][Character.getNumericValue(shot.charAt(1))] = "X";
+                fogField[(int) shot.charAt(0) - 64][Character.getNumericValue(shot.charAt(1))] = "X";
+                printField(fogField);
+                System.out.println("You hit a ship!");
+                printField(playField);
+            }
+
+
+    }
     public static String[] getCoord(String message) {
         System.out.println(message);
         String shipCoord = sc.nextLine();
