@@ -1,5 +1,7 @@
 package battleship;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 /* TODO: code review changes
     Update HORIZONTAL to be a local variable instead of a class-level variable to avoid unintended side effects between method calls.
@@ -44,32 +46,64 @@ public class Main {
         takeShot(playField, fogField);
     }
 
+    public static boolean isShipSunk(String[][] playField, int x, int y) {
+        int[] dx = {-1, 1, 0, 0};
+        int[] dy = {0, 0, -1, 1};
+
+        for (int direction = 0; direction < 4; direction++) {
+            int newX = x + dx[direction];
+            int newY = y + dy[direction];
+
+            while (newX >= 1 && newX <= 10 && newY >= 1 && newY <= 10 && playField[newX][newY].equals("X")) {
+                newX += dx[direction];
+                newY += dy[direction];
+            }
+
+            if (newX >= 1 && newX <= 10 && newY >= 1 && newY <= 10 && playField[newX][newY].equals("O")) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
     public static void takeShot(String[][] playField, String[][] fogField){
         System.out.println("Take a shot!");
-        String shot = sc.nextLine();
-        int x = (int) shot.charAt(0) - 64;
-        int y = Character.getNumericValue(shot.charAt(1));
-        while(x > 10 || x < 0 || y > 10 || y < 0 || (shot.length() > 2 && Character.valueOf(shot.charAt(shot.length() - 1)) > 0)) {
-            System.out.println("Error! You entered the wrong coordinates! Try again:");
-            System.out.println("Take a shot!");
-            shot = sc.nextLine();
-            x = (int) shot.charAt(0) - 64;
-            y = Character.getNumericValue(shot.charAt(1));
-        }
-            String value = playField[x][y];
-            if ("~".equals(value)) {
-                playField[(int) shot.charAt(0) - 64][Character.getNumericValue(shot.charAt(1))] = "M";
-                fogField[(int) shot.charAt(0) - 64][Character.getNumericValue(shot.charAt(1))] = "M";
+        int remainingParts = 17;
+        while(remainingParts > 0) {
+            String shot = sc.nextLine();
+            int x = (int) shot.charAt(0) - 64;
+            int y = Integer.parseInt(shot.substring(1));
+            while (x > 10 || x < 0 || y > 10 || y < 0) {
                 printField(fogField);
-                System.out.println("You missed!");
-                printField(playField);
-            } else if ("O".equals(value)) {
-                playField[(int) shot.charAt(0) - 64][Character.getNumericValue(shot.charAt(1))] = "X";
-                fogField[(int) shot.charAt(0) - 64][Character.getNumericValue(shot.charAt(1))] = "X";
-                printField(fogField);
-                System.out.println("You hit a ship!");
-                printField(playField);
+                System.out.println("Error! You entered the wrong coordinates! Try again:");
+//                System.out.println("You missed! Try again:");
+                shot = sc.nextLine();
+                x = (int) shot.charAt(0) - 64;
+                y = Integer.parseInt(shot.substring(1));
             }
+            String value = playField[x][y];
+            if ("~".equals(value) || "M".equals(value)) {
+                playField[(int) shot.charAt(0) - 64][Integer.parseInt(shot.substring(1))] = "M";
+                fogField[(int) shot.charAt(0) - 64][Integer.parseInt(shot.substring(1))] = "M";
+                printField(fogField);
+                System.out.println("You missed! Try again:");
+            } else if ("O".equals(value) || "X".equals(value)) {
+                playField[(int) shot.charAt(0) - 64][Integer.parseInt(shot.substring(1))] = "X";
+                fogField[(int) shot.charAt(0) - 64][Integer.parseInt(shot.substring(1))] = "X";
+                printField(fogField);
+                if (isShipSunk(playField, x, y)) {
+                    System.out.println("You sank a ship! Specify a new target:");
+                } else {
+                    System.out.println("You hit a ship! Try again:");
+                }
+                if("O".equals(value)) {
+                    remainingParts--;
+                }
+            }
+        }
+        System.out.println("You sank the last ship. You won. Congratulations!");
 
 
     }
@@ -108,7 +142,10 @@ public class Main {
         }
         str.append(end);
 //        System.out.println("length: " + len);
+
+
         return len;
+
 //        System.out.println("Parts: " + str.toString());
     }
 
