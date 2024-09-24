@@ -3,47 +3,95 @@ package battleship;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-/* TODO: code review changes
-    Update HORIZONTAL to be a local variable instead of a class-level variable to avoid unintended side effects between method calls.
-    Initialize playField directly using the method call createPlayField.
-    In the getLengthAndParts method:
-    Remove commented-out code.
-    Modify the checkCoord method:
-    Correct the first while loop condition by using && instead of ||.
-    Correct logical checks in checkCoord to avoid infinite loops and ensure errors are detected correctly:
-    Change the initial while checks to if conditions as they do not need to loop continuously.
-    Replace repetitive calls to getCoord with break statements after updating coordinates.
-    Ensure playField is updated correctly in isOverlapping without modifying it during validation.
-    In the getNumericCoord method:
-    Validate input to handle potential parsing issues.
-    Move coordinate orientation detection logic after parsing both coordinates.
-    Ensure checkCoord properly adds ships to playField after all validations pass.
-    Add missing ship placement logic inside the checkCoord method to update playField.
-    In printField, ensure proper formatting and eliminate any potential index out of bounds issues.
-    */
 public class Main {
     public static boolean HORIZONTAL = false;
     static Scanner sc = new Scanner(System.in);
     public static void main(String[] args) {
 
-        String[][] playField = new String[11][11];
-        String[][] fogField = new String[11][11];
+        String[][] playField1 = new String[11][11];
+        String[][] fogField1 = new String[11][11];
+        String[][] playField2 = new String[11][11];
+        String[][] fogField2 = new String[11][11];
         String[] vessels = new String[]{"Aircraft Carrier", "Battleship", "Submarine", "Cruiser", "Destroyer"};
         int[] vesselLength = new int[]{5,4,3,3,2};
-        StringBuilder wrondCoord = new StringBuilder();
-        playField = createPlayField(playField);
-        fogField = createPlayField(fogField);
-        printField(playField);
-        for(int i = 0; i < vessels.length;i++) {
-            String[] coOrdinate = getCoord("Enter the coordinates of the "+vessels[i]+" ("+ vesselLength[i] +" cells):");
-            boolean isCorrect =  checkCoord(coOrdinate, vessels[i], vesselLength[i], playField);
-            if(isCorrect) {
-                printField(playField);
+        playField1 = createPlayField(playField1);
+        fogField1 = createPlayField(fogField1);
+        playField2 = createPlayField(playField2);
+        fogField2 = createPlayField(fogField2);
+        int remainingParts1 = 17;
+        int remainingParts2 = 17;
+        int playerTurn = 1;
+        for(int j = 0; j < 2; j++) {
+            switch (playerTurn){
+                case 1:
+                    System.out.println("Player 1, place your ships on the game field");
+                    printField(playField1);
+                    for(int i = 0; i < vessels.length;i++) {
+                        String[] coOrdinate = getCoord("Enter the coordinates of the "+vessels[i]+" ("+ vesselLength[i] +" cells):");
+                        boolean isCorrect =  checkCoord(coOrdinate, vessels[i], vesselLength[i], playField1);
+                        if(isCorrect) {
+                            printField(playField1);
+                        }
+                    }
+                    printPassMsg();
+                    playerTurn = 2;
+                    break;
+                case 2:
+                    System.out.println("Player 2, place your ships to the game field");
+                    printField(playField2);
+                    for(int i = 0; i < vessels.length;i++) {
+                        String[] coOrdinate = getCoord("Enter the coordinates of the "+vessels[i]+" ("+ vesselLength[i] +" cells):");
+                        boolean isCorrect =  checkCoord(coOrdinate, vessels[i], vesselLength[i], playField2);
+                        if(isCorrect) {
+                            printField(playField2);
+                        }
+                    }
+                    printPassMsg();
+                    playerTurn = 1;
+                    break;
             }
         }
-        System.out.println("The game starts!");
+
+        while(remainingParts1 > -1 && remainingParts2 > -1) {
+            switch (playerTurn) {
+                case 1:
+                    printPlayField(playField1, fogField2);
+                    System.out.println("Player 1, it's your turn:");
+                    remainingParts2 = takeShot(playField2, fogField2, remainingParts2);
+                    printPassMsg();
+                    playerTurn = 2;
+                    break;
+                case 2:
+                    printPlayField(playField2, fogField1);
+                    System.out.println("Player 2, it's your turn:");
+                    remainingParts1 = takeShot(playField1, fogField1, remainingParts1);
+                    printPassMsg();
+                    playerTurn = 1;
+                    break;
+            }
+        }
+
+
+
+
+
+
+
+
+
+//        System.out.println("The game starts!");
+
+    }
+
+    private static void printPassMsg() {
+        System.out.println("Press Enter and pass the move to another player");
+        sc.nextLine();
+    }
+
+    public static void printPlayField(String[][] playField, String[][] fogField){
         printField(fogField);
-        takeShot(playField, fogField);
+        System.out.println("---------------------");
+        printField(playField);
     }
 
     public static boolean isShipSunk(String[][] playField, int x, int y) {
@@ -68,15 +116,11 @@ public class Main {
     }
 
 
-    public static void takeShot(String[][] playField, String[][] fogField){
-        System.out.println("Take a shot!");
-        int remainingParts = 17;
-        while(remainingParts > 0) {
+    public static int takeShot(String[][] playField, String[][] fogField, int remainingParts){
             String shot = sc.nextLine();
             int x = (int) shot.charAt(0) - 64;
             int y = Integer.parseInt(shot.substring(1));
             while (x > 10 || x < 0 || y > 10 || y < 0) {
-                printField(fogField);
                 System.out.println("Error! You entered the wrong coordinates! Try again:");
 //                System.out.println("You missed! Try again:");
                 shot = sc.nextLine();
@@ -87,23 +131,22 @@ public class Main {
             if ("~".equals(value) || "M".equals(value)) {
                 playField[(int) shot.charAt(0) - 64][Integer.parseInt(shot.substring(1))] = "M";
                 fogField[(int) shot.charAt(0) - 64][Integer.parseInt(shot.substring(1))] = "M";
-                printField(fogField);
                 System.out.println("You missed! Try again:");
             } else if ("O".equals(value) || "X".equals(value)) {
                 playField[(int) shot.charAt(0) - 64][Integer.parseInt(shot.substring(1))] = "X";
                 fogField[(int) shot.charAt(0) - 64][Integer.parseInt(shot.substring(1))] = "X";
-                printField(fogField);
                 if (isShipSunk(playField, x, y)) {
                     System.out.println("You sank a ship! Specify a new target:");
                 } else {
                     System.out.println("You hit a ship! Try again:");
                 }
-                if("O".equals(value)) {
-                    remainingParts--;
-                }
+                remainingParts--;
+                System.out.println(remainingParts);
             }
-        }
-        System.out.println("You sank the last ship. You won. Congratulations!");
+            if(remainingParts < 0) {
+                System.out.println("You sank the last ship. You won. Congratulations!");
+            }
+            return remainingParts;
 
 
     }
